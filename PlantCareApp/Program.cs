@@ -1,3 +1,4 @@
+using System.IO;
 using Microsoft.EntityFrameworkCore;
 using PlantCareApp.Components;
 using PlantCareApp.Data;
@@ -6,8 +7,28 @@ using PlantCareApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var configuredDbPath = Environment.GetEnvironmentVariable("PLANTAPP_DB_PATH");
+string databasePath;
+
+if (string.IsNullOrWhiteSpace(configuredDbPath))
+{
+    var dataDirectory = Path.Combine(AppContext.BaseDirectory, "data");
+    Directory.CreateDirectory(dataDirectory);
+    databasePath = Path.Combine(dataDirectory, "plants.db");
+}
+else
+{
+    var directory = Path.GetDirectoryName(configuredDbPath);
+    if (!string.IsNullOrEmpty(directory))
+    {
+        Directory.CreateDirectory(directory);
+    }
+
+    databasePath = configuredDbPath;
+}
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite("Data Source=plants.db"));
+    options.UseSqlite($"Data Source={databasePath}"));
 
 builder.Services.Configure<OpenAIOptions>(builder.Configuration.GetSection("OpenAI"));
 
